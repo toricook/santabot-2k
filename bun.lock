@@ -5,6 +5,7 @@
     "": {
       "name": "santabot-2k",
       "dependencies": {
+        "@clerk/clerk-react": "^5.55.0",
         "@clerk/nextjs": "^6.35.1",
         "@vercel/postgres": "^0.10.0",
         "drizzle-orm": "^0.44.7",

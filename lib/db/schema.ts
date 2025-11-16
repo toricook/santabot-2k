@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Users table
 export const users = pgTable("users", {
@@ -41,4 +41,16 @@ export const assignments = pgTable("assignments", {
     .references(() => games.id),
   year: text("year").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const profiles = pgTable("profiles", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id),
+  name: text("name").notNull(),
+  age: integer("age").notNull(),
+  favoriteColors: text("favorite_colors").notNull(),
+  interests: text("interests").notNull(),
+  wishlist: text("wishlist").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

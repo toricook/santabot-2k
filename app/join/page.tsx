@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { JoinGameForm } from "@/app/join/JoinGameForm";
 
 export default function JoinGamePage() {
   return (
@@ -25,28 +26,7 @@ export default function JoinGamePage() {
           </Link>
         </div>
 
-        <form className="mt-8 space-y-5">
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-[0.4em] text-green-600">
-              Game code
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. HOLIDAY2025"
-              className="w-full rounded-2xl border border-green-200 bg-green-50/80 px-4 py-3 text-lg font-semibold tracking-[0.3em] text-green-900 placeholder:text-green-500 focus:border-red-400 focus:outline-none"
-            />
-          </div>
-          <p className="text-xs text-green-700">
-            Codes are not case-sensitive. If you don&apos;t have one yet, ask
-            your host to send their invite link.
-          </p>
-          <button
-            type="button"
-            className="inline-flex w-full items-center justify-center rounded-full bg-red-600 px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:bg-red-500"
-          >
-            Join game
-          </button>
-        </form>
+        <JoinGameForm />
       </div>
     </div>
   );

@@ -8,6 +8,13 @@
       "when": 1763240218104,
       "tag": "0000_familiar_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763326797411,
+      "tag": "0001_omniscient_bishop",
+      "breakpoints": true
     }
   ]
 }
