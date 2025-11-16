@@ -196,6 +196,21 @@ export async function saveProfile(profileInput: SaveProfileInput) {
   revalidatePath("/profile");
 }
 
+export async function updateWishlist(wishlistInput: string) {
+  const sessionUser = await requireSessionUser();
+  const trimmedWishlist = wishlistInput.trim();
+
+  await db
+    .update(users)
+    .set({
+      wishlist: trimmedWishlist.length > 0 ? trimmedWishlist : null,
+    })
+    .where(eq(users.id, sessionUser.id));
+
+  revalidatePath("/");
+  revalidatePath("/profile");
+}
+
 async function ensureGameOwner(gameId: string, userId: string) {
   const [game] = await db
     .select({
