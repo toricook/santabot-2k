@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type GameStatus = "pre-draw" | "in-progress" | "complete";
@@ -35,7 +35,7 @@ const demoUser: DashboardUser = {
   greeting: "Happy gifting season, Casey!",
   games: [
     {
-      id: "engineering-buddies",
+      id: "46e3a682-2ed0-49fe-97c7-807d5970cf73",
       name: "Engineering Buddies",
       status: "in-progress",
       description: "Drop hints, submit wishlists, and surprise someone on Dec 18.",
@@ -54,7 +54,7 @@ const demoUser: DashboardUser = {
       },
     },
     {
-      id: "founders-circle",
+      id: "a89b5b01-c81d-4a8f-9c5a-36df725bd88b",
       name: "Founders Circle",
       status: "pre-draw",
       description: "Invites close on Nov 30—draw happens automatically right after.",
@@ -62,7 +62,7 @@ const demoUser: DashboardUser = {
       isHost: true,
     },
     {
-      id: "family-2025",
+      id: "cfb1376a-0cde-4a25-8975-4ec588a76628",
       name: "Family 2025",
       status: "complete",
       description: "Wrapped up last week—upload reaction photos if you have them!",
@@ -218,15 +218,15 @@ function HeroSection() {
 function Dashboard({ user }: { user: DashboardUser }) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!selectedGameId && user.games.length > 0) {
-      setSelectedGameId(user.games[0].id);
-    }
-  }, [selectedGameId, user.games]);
+  const defaultGameId = user.games[0]?.id ?? null;
+  const activeGameId =
+    selectedGameId && user.games.some((game) => game.id === selectedGameId)
+      ? selectedGameId
+      : defaultGameId;
 
   const selectedGame = useMemo(
-    () => user.games.find((game) => game.id === selectedGameId),
-    [selectedGameId, user.games],
+    () => user.games.find((game) => game.id === activeGameId),
+    [activeGameId, user.games],
   );
 
   return (
@@ -263,7 +263,7 @@ function Dashboard({ user }: { user: DashboardUser }) {
               </div>
             )}
             {user.games.map((game) => {
-              const isActive = game.id === selectedGameId;
+              const isActive = game.id === activeGameId;
               return (
                 <button
                   key={game.id}

@@ -1,40 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { loadAdminConsoleData, triggerSecretSantaAssignment } from "@/app/actions";
+import type {
+  AdminConsoleState,
+  AdminParticipant,
+  GameStatus,
+  InviteStatus,
+} from "./types";
 
-type GameStatus = "pre-draw" | "in-progress";
-type InviteStatus = "accepted" | "pending" | "bounced";
-
-type Participant = {
-  name: string;
-  email: string;
+type ActionFeedback = {
+  type: "success" | "error";
+  message: string;
 };
 
-type Invitee = {
-  email: string;
-  status: InviteStatus;
+type AdminConsoleProps = {
+  gameId: string;
+  initialState: AdminConsoleState;
 };
 
-const demoParticipants: Participant[] = [
-  { name: "Casey Rivera", email: "casey@santabot.dev" },
-  { name: "Jordan Lee", email: "jordan@santabot.dev" },
-  { name: "Morgan Patel", email: "morgan@santabot.dev" },
-  { name: "Alex Scott", email: "alex@santabot.dev" },
-];
-
-const demoInvites: Invitee[] = [
-  { email: "sammy@example.com", status: "accepted" },
-  { email: "reese@example.com", status: "pending" },
-  { email: "quinn@example.com", status: "bounced" },
-];
-
-export function AdminConsole({ gameId }: { gameId: string }) {
-  const [gameStatus, setGameStatus] = useState<GameStatus>("pre-draw");
-  const [participants] = useState<Participant[]>(demoParticipants);
-  const [invitees, setInvitees] = useState<Invitee[]>(demoInvites);
-  const [gameDate, setGameDate] = useState("2025-12-20T18:00");
+export function AdminConsole({ gameId, initialState }: AdminConsoleProps) {
+  const fallbackYear = initialState.latestAssignmentYear ?? new Date().getFullYear().toString();
+  const [gameStatus, setGameStatus] = useState<GameStatus>(initialState.gameStatus);
+  const [participants, setParticipants] = useState<AdminParticipant[]>(
+    initialState.participants,
+  );
+  const [invitees, setInvitees] = useState(initialState.invitees);
+  const [latestAssignmentYear, setLatestAssignmentYear] = useState<string | null>(
+    initialState.latestAssignmentYear,
+  );
+  const [gameDate, setGameDate] = useState(`${fallbackYear}-12-20T18:00`);
   const [newEmail, setNewEmail] = useState("");
+  const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
+  const [isDrawing, startDrawing] = useTransition();
+  const [isRefreshing, startRefresh] = useTransition();
 
   const joinCode = useMemo(
     () => `${gameId?.slice(0, 4)?.toUpperCase() ?? "GAME"}-HOLIDAY`,
@@ -62,8 +62,53 @@ export function AdminConsole({ gameId }: { gameId: string }) {
     setNewEmail("");
   };
 
+  const derivedYear = () => {
+    if (!gameDate) return new Date().getFullYear().toString();
+    const parsed = new Date(gameDate);
+    if (Number.isNaN(parsed.valueOf())) {
+      return new Date().getFullYear().toString();
+    }
+    return parsed.getFullYear().toString();
+  };
+
+  const refreshConsoleState = () => {
+    setFeedback(null);
+    startRefresh(async () => {
+      const refreshedState = await loadAdminConsoleData(gameId);
+      setGameStatus(refreshedState.gameStatus);
+      setParticipants(refreshedState.participants);
+      setInvitees(refreshedState.invitees);
+      setLatestAssignmentYear(refreshedState.latestAssignmentYear);
+      setFeedback({
+        type: "success",
+        message: "Console synced with the latest game data.",
+      });
+    });
+  };
+
   const handleDrawNames = () => {
-    setGameStatus("in-progress");
+    if (gameStatus === "in-progress") return;
+    setFeedback(null);
+
+    startDrawing(async () => {
+      try {
+        await triggerSecretSantaAssignment(gameId, derivedYear());
+        setGameStatus("in-progress");
+        setLatestAssignmentYear(derivedYear());
+        setFeedback({
+          type: "success",
+          message: "Names drawn! Everyone has a match and invites are now locked.",
+        });
+      } catch (error) {
+        setFeedback({
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Something went wrong while drawing names. Please try again.",
+        });
+      }
+    });
   };
 
   const handleDelete = () => {
@@ -87,12 +132,22 @@ export function AdminConsole({ gameId }: { gameId: string }) {
               wired up.
             </p>
           </div>
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-full border border-green-600 px-6 py-2 text-sm font-semibold text-green-700 transition hover:border-red-500 hover:text-red-600"
-          >
-            Back to dashboard
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={refreshConsoleState}
+              className="inline-flex items-center rounded-full border border-green-600 px-6 py-2 text-sm font-semibold text-green-700 transition hover:border-red-500 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? "Syncing..." : "Refresh data"}
+            </button>
+            <Link
+              href="/"
+              className="inline-flex items-center rounded-full border border-green-600 px-6 py-2 text-sm font-semibold text-green-700 transition hover:border-red-500 hover:text-red-600"
+            >
+              Back to dashboard
+            </Link>
+          </div>
         </header>
 
         <section className="grid gap-6 md:grid-cols-3">
@@ -111,15 +166,33 @@ export function AdminConsole({ gameId }: { gameId: string }) {
             <button
               type="button"
               onClick={handleDrawNames}
-              disabled={gameStatus === "in-progress"}
+              disabled={gameStatus === "in-progress" || isDrawing}
               className={`mt-5 inline-flex w-full items-center justify-center rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white transition ${
                 gameStatus === "in-progress"
                   ? "cursor-not-allowed bg-green-500/60"
-                  : "bg-red-600 hover:bg-red-500"
+                  : isDrawing
+                    ? "bg-red-500/80"
+                    : "bg-red-600 hover:bg-red-500"
               }`}
             >
-              Draw names
+              {isDrawing ? "Drawing..." : "Draw names"}
             </button>
+            {feedback && (
+              <p
+                className={`mt-3 text-xs ${
+                  feedback.type === "success" ? "text-green-700" : "text-red-600"
+                }`}
+              >
+                {feedback.message}
+              </p>
+            )}
+            {!feedback && (
+              <p className="mt-3 text-xs text-green-700">
+                {latestAssignmentYear
+                  ? `Last draw recorded for ${latestAssignmentYear}.`
+                  : "No draws have been recorded for this game yet."}
+              </p>
+            )}
           </div>
 
           <div className="rounded-3xl border border-green-100 bg-white/90 p-6 shadow-sm">

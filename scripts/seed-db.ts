@@ -41,7 +41,7 @@ async function seed() {
   await db.insert(users).values(testUsers);
   console.log("[seed] Created test users");
 
-  // Create a sample game
+  // Create a sample in-progress game
   const [{ id: familyGameId }] = await db
     .insert(games)
     .values({
@@ -49,7 +49,7 @@ async function seed() {
       creatorId: "user_test123",
     })
     .returning({ id: games.id });
-  console.log("[seed] Created test game");
+  console.log("[seed] Created test game (in-progress)");
 
   // Add all test users to the game
   await db.insert(gamePlayers).values(
@@ -58,7 +58,7 @@ async function seed() {
       userId: user.id,
     }))
   );
-  console.log("[seed] Added players to game");
+  console.log("[seed] Added players to in-progress game");
 
   // Create a test assignment (You -> Mom)
   await db.insert(assignments).values({
@@ -68,6 +68,25 @@ async function seed() {
     year: "2024",
   });
   console.log("[seed] Created test assignment");
+
+  // Create a second game that remains in pre-draw status
+  const [{ id: preDrawGameId }] = await db
+    .insert(games)
+    .values({
+      name: "Friends Secret Santa 2025",
+      creatorId: "user_test123",
+    })
+    .returning({ id: games.id });
+  console.log("[seed] Created pre-draw test game");
+
+  // Add a subset of players to the pre-draw game
+  await db.insert(gamePlayers).values(
+    testUsers.slice(0, 3).map((user) => ({
+      gameId: preDrawGameId,
+      userId: user.id,
+    }))
+  );
+  console.log("[seed] Added players to pre-draw game");
 
   console.log("[seed] Seeding complete!");
 }
