@@ -66,11 +66,81 @@ export async function loadAdminConsoleData(
     .limit(1);
 
   return {
-    game,
+    game: {
+      id: game.id,
+      name: game.name,
+      eventDate: game.eventDate?.toISOString() ?? null,
+    },
     participants,
     invitees,
     gameStatus: latestAssignment ? "in-progress" : "pre-draw",
     latestAssignmentYear: latestAssignment?.year ?? null,
+  };
+}
+
+type CreateGameInput = {
+  name: string;
+  eventDate: string;
+  inviteEmails?: string[];
+};
+
+export async function createGame(input: CreateGameInput) {
+  const sessionUser = await requireSessionUser();
+  const trimmedName = input.name.trim();
+
+  if (!trimmedName) {
+    throw new Error("Give your game a name so players recognize it.");
+  }
+
+  if (!input.eventDate) {
+    throw new Error("Choose a date and time for the exchange.");
+  }
+
+  const parsedDate = new Date(input.eventDate);
+  if (Number.isNaN(parsedDate.valueOf())) {
+    throw new Error("Enter a valid date and time.");
+  }
+
+  const sanitizedInvites = Array.from(
+    new Set(
+      (input.inviteEmails ?? [])
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+
+  const invalidInvite = sanitizedInvites.find((email) => !isValidEmail(email));
+  if (invalidInvite) {
+    throw new Error(`"${invalidInvite}" is not a valid email address.`);
+  }
+
+  const [game] = await db
+    .insert(games)
+    .values({
+      name: trimmedName,
+      creatorId: sessionUser.id,
+      eventDate: parsedDate,
+    })
+    .returning({
+      id: games.id,
+      name: games.name,
+      eventDate: games.eventDate,
+    });
+
+  await db.insert(gamePlayers).values({
+    gameId: game.id,
+    userId: sessionUser.id,
+  });
+
+  revalidatePath("/");
+  revalidatePath(`/games/${game.id}/admin`);
+
+  return {
+    gameId: game.id,
+    name: game.name,
+    joinCode: buildJoinCode(game.id),
+    eventDate: game.eventDate?.toISOString() ?? parsedDate.toISOString(),
+    invitees: sanitizedInvites,
   };
 }
 
@@ -217,6 +287,7 @@ async function ensureGameOwner(gameId: string, userId: string) {
       id: games.id,
       name: games.name,
       creatorId: games.creatorId,
+      eventDate: games.eventDate,
     })
     .from(games)
     .where(eq(games.id, gameId))
@@ -235,4 +306,8 @@ async function ensureGameOwner(gameId: string, userId: string) {
 
 function buildJoinCode(gameId: string) {
   return `${gameId.slice(0, 4).toUpperCase()}-HOLIDAY`;
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }

@@ -17,6 +17,7 @@ export type DashboardGame = {
   description: string;
   nextEvent: string;
   isHost: boolean;
+  eventDate?: string | null;
   recipient?: DashboardRecipient;
 };
 
@@ -58,6 +59,12 @@ export default function DashboardClient({ user }: { user: DashboardData }) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-4">
           <Link
+            href="/games/create"
+            className="inline-flex items-center rounded-full bg-red-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500"
+          >
+            Create a game
+          </Link>
+          <Link
             href="/join"
             className="inline-flex items-center rounded-full border border-green-700 px-6 py-2 text-sm font-semibold text-green-800 transition hover:border-red-500 hover:text-red-600"
           >
@@ -91,6 +98,12 @@ export default function DashboardClient({ user }: { user: DashboardData }) {
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-green-500">
             Your games
           </p>
+          <Link
+            href="/games/create"
+            className="mt-3 inline-flex items-center justify-center rounded-full border border-green-600 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-green-700 transition hover:border-red-500 hover:text-red-600"
+          >
+            + Create
+          </Link>
           <div className="mt-4 flex flex-col gap-3">
             {user.games.map((game) => {
               const isActive = selectedGame?.id === game.id;
@@ -112,6 +125,11 @@ export default function DashboardClient({ user }: { user: DashboardData }) {
                     <StatusBadge status={game.status} compact />
                   </div>
                   <p className="mt-1 text-sm text-green-800">{game.description}</p>
+                  {game.eventDate && (
+                    <p className="mt-1 text-xs text-green-600">
+                      Exchange on {formatEventDate(game.eventDate)}
+                    </p>
+                  )}
                   <p className="mt-2 text-xs font-semibold uppercase tracking-[0.3em] text-green-500">
                     {game.nextEvent}
                   </p>
@@ -140,6 +158,11 @@ export default function DashboardClient({ user }: { user: DashboardData }) {
                   <p className="mt-2 text-xs font-semibold uppercase tracking-[0.4em] text-green-500">
                     Next: {selectedGame.nextEvent}
                   </p>
+                  {selectedGame.eventDate && (
+                    <p className="mt-1 text-xs text-green-600">
+                      Exchange on {formatEventDate(selectedGame.eventDate)}
+                    </p>
+                  )}
                 </div>
                 <StatusBadge status={selectedGame.status} />
               </div>
@@ -170,6 +193,21 @@ export default function DashboardClient({ user }: { user: DashboardData }) {
       </div>
     </section>
   );
+}
+
+function formatEventDate(value?: string | null) {
+  if (!value) return "TBD";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.valueOf())) {
+    return "TBD";
+  }
+  return parsed.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function StatusBadge({

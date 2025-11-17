@@ -47,6 +47,7 @@ async function seed() {
     .values({
       name: "Family Secret Santa 2024",
       creatorId: "user_test123",
+      eventDate: new Date("2024-12-20T18:00:00Z"),
     })
     .returning({ id: games.id });
   console.log("[seed] Created test game (in-progress)");
@@ -75,6 +76,7 @@ async function seed() {
     .values({
       name: "Friends Secret Santa 2025",
       creatorId: "user_test123",
+      eventDate: new Date("2025-12-18T20:00:00Z"),
     })
     .returning({ id: games.id });
   console.log("[seed] Created pre-draw test game");

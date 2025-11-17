@@ -16,6 +16,7 @@ export type AdminConsoleState = {
   game: {
     id: string;
     name: string;
+    eventDate: string | null;
   };
   participants: AdminParticipant[];
   invitees: AdminInvitee[];

@@ -1,0 +1,1 @@
+ALTER TABLE "games" ADD COLUMN "event_date" timestamp with time zone NOT NULL;

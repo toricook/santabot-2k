@@ -30,7 +30,9 @@ export function AdminConsole({ gameId, initialState }: AdminConsoleProps) {
   const [latestAssignmentYear, setLatestAssignmentYear] = useState<string | null>(
     initialState.latestAssignmentYear,
   );
-  const [gameDate, setGameDate] = useState(`${fallbackYear}-12-20T18:00`);
+  const [gameDate, setGameDate] = useState(
+    deriveInputDate(initialState.game.eventDate, fallbackYear),
+  );
   const [newEmail, setNewEmail] = useState("");
   const [feedback, setFeedback] = useState<ActionFeedback | null>(null);
   const [isDrawing, startDrawing] = useTransition();
@@ -79,6 +81,9 @@ export function AdminConsole({ gameId, initialState }: AdminConsoleProps) {
       setParticipants(refreshedState.participants);
       setInvitees(refreshedState.invitees);
       setLatestAssignmentYear(refreshedState.latestAssignmentYear);
+      const refreshedFallbackYear =
+        refreshedState.latestAssignmentYear ?? new Date().getFullYear().toString();
+      setGameDate(deriveInputDate(refreshedState.game.eventDate, refreshedFallbackYear));
       setFeedback({
         type: "success",
         message: "Console synced with the latest game data.",
@@ -126,7 +131,7 @@ export function AdminConsole({ gameId, initialState }: AdminConsoleProps) {
             <h1 className="text-4xl font-black text-red-600">
               Game admin · {gameId}
             </h1>
-            <p className="text-sm text-green-800">
+            <p className="text-xs font-mono uppercase tracking-[0.3em] text-green-600">`r`n              Game ID: {gameId}`r`n            </p>`r`n            <p className="text-sm text-green-800">
               Monitor members, manage invites, and kick off the drawing when
               you&apos;re ready. These actions are placeholders until the backend is
               wired up.
@@ -329,6 +334,21 @@ export function AdminConsole({ gameId, initialState }: AdminConsoleProps) {
   );
 }
 
+function deriveInputDate(eventDate: string | null, fallbackYear: string) {
+  return toDatetimeLocalInput(eventDate) ?? `${fallbackYear}-12-20T18:00`;
+}
+
+function toDatetimeLocalInput(value: string | null) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.valueOf())) {
+    return null;
+  }
+  const tzOffset = parsed.getTimezoneOffset();
+  const localDate = new Date(parsed.getTime() - tzOffset * 60 * 1000);
+  return localDate.toISOString().slice(0, 16);
+}
+
 function InviteStatusBadge({ status }: { status: InviteStatus }) {
   const colorMap: Record<InviteStatus, string> = {
     accepted: "bg-green-100 text-green-700 border-green-200",
@@ -344,3 +364,4 @@ function InviteStatusBadge({ status }: { status: InviteStatus }) {
     </span>
   );
 }
+

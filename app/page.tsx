@@ -54,8 +54,14 @@ export default async function Home() {
               Edit profile
             </Link>
             <Link
-              href="/join"
+              href="/games/create"
               className="inline-flex items-center rounded-full bg-red-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500"
+            >
+              Create a game
+            </Link>
+            <Link
+              href="/join"
+              className="inline-flex items-center rounded-full border border-green-700 px-6 py-2 text-sm font-semibold text-green-800 transition hover:border-red-500 hover:text-red-600"
             >
               Join a game
             </Link>
@@ -82,6 +88,7 @@ async function buildDashboardData(
         name: games.name,
         creatorId: games.creatorId,
         joinedAt: gamePlayers.joinedAt,
+        eventDate: games.eventDate,
       })
       .from(gamePlayers)
       .innerJoin(games, eq(gamePlayers.gameId, games.id))
@@ -129,6 +136,7 @@ async function buildDashboardData(
       description: getDescription(status, assignment?.year),
       nextEvent: getNextEvent(status, assignment?.year),
       isHost: game.creatorId === userId,
+      eventDate: game.eventDate?.toISOString() ?? null,
       recipient: assignment
         ? {
             name: assignment.receiverName ?? "Mystery Santa",

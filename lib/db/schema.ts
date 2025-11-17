@@ -16,6 +16,7 @@ export const games = pgTable("games", {
   creatorId: text("creator_id")
     .notNull()
     .references(() => users.id),
+  eventDate: timestamp("event_date", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
